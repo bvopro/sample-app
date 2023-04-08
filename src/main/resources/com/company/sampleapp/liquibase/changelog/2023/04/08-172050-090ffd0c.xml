@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.11.xsd"
+    objectQuotingStrategy="QUOTE_ONLY_RESERVED_WORDS">
+    <changeSet id="1" author="SampleApp">
+        <createTable tableName="ENTITY_SOFT_DELETE_A">
+            <column name="ID" type="UUID">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="PK_ENTITY_SOFT_DELETE_A"/>
+            </column>
+            <column name="DELETED_BY" type="VARCHAR(255)"/>
+            <column name="DELETED_DATE" type="DATETIME"/>
+            <column name="PARENT_ENTITY_ID" type="UUID"/>
+        </createTable>
+    </changeSet>
+    <changeSet id="2" author="SampleApp">
+        <createTable tableName="ENTITY_SOFT_DELETE_B">
+            <column name="ID" type="UUID">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="PK_ENTITY_SOFT_DELETE_B"/>
+            </column>
+            <column name="DELETED_BY" type="VARCHAR(255)"/>
+            <column name="DELETED_DATE" type="DATETIME"/>
+            <column name="PARENT_ENTITY_ID" type="UUID"/>
+        </createTable>
+    </changeSet>
+    <changeSet id="3" author="SampleApp">
+        <createTable tableName="PARENT_ENTITY">
+            <column name="ID" type="UUID">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="PK_PARENT_ENTITY"/>
+            </column>
+            <column name="ONE2ONE_A_ID" type="UUID"/>
+            <column name="ONE2ONE_B_ID" type="UUID"/>
+        </createTable>
+    </changeSet>
+    <changeSet id="4" author="SampleApp">
+        <createIndex indexName="IDX_ENTITY_SOFT_DELETE_A_PARENT_ENTITY" tableName="ENTITY_SOFT_DELETE_A">
+            <column name="PARENT_ENTITY_ID"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseColumnNames="PARENT_ENTITY_ID" baseTableName="ENTITY_SOFT_DELETE_A"
+                                 constraintName="FK_ENTITY_SOFT_DELETE_A_ON_PARENT_ENTITY" referencedColumnNames="ID"
+                                 referencedTableName="PARENT_ENTITY"/>
+    </changeSet>
+    <changeSet id="5" author="SampleApp">
+        <createIndex indexName="IDX_ENTITY_SOFT_DELETE_B_PARENT_ENTITY" tableName="ENTITY_SOFT_DELETE_B">
+            <column name="PARENT_ENTITY_ID"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseColumnNames="PARENT_ENTITY_ID" baseTableName="ENTITY_SOFT_DELETE_B"
+                                 constraintName="FK_ENTITY_SOFT_DELETE_B_ON_PARENT_ENTITY" referencedColumnNames="ID"
+                                 referencedTableName="PARENT_ENTITY"/>
+    </changeSet>
+    <changeSet id="6" author="SampleApp">
+        <createIndex indexName="IDX_PARENT_ENTITY_ONE2ONE_A" tableName="PARENT_ENTITY">
+            <column name="ONE2ONE_A_ID"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseColumnNames="ONE2ONE_A_ID" baseTableName="PARENT_ENTITY"
+                                 constraintName="FK_PARENT_ENTITY_ON_ONE2ONE_A" referencedColumnNames="ID"
+                                 referencedTableName="ENTITY_SOFT_DELETE_A"/>
+    </changeSet>
+    <changeSet id="7" author="SampleApp">
+        <createIndex indexName="IDX_PARENT_ENTITY_ONE2ONE_B" tableName="PARENT_ENTITY">
+            <column name="ONE2ONE_B_ID"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseColumnNames="ONE2ONE_B_ID" baseTableName="PARENT_ENTITY"
+                                 constraintName="FK_PARENT_ENTITY_ON_ONE2ONE_B" referencedColumnNames="ID"
+                                 referencedTableName="ENTITY_SOFT_DELETE_B"/>
+    </changeSet>
+</databaseChangeLog>
