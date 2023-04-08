@@ -3,6 +3,8 @@
 package com.company.sampleapp.entity
 
 import com.company.sampleapp.entity.User
+import com.company.sampleapp.repository.EntitySoftDeleteARepository
+import com.company.sampleapp.repository.EntitySoftDeleteBRepository
 import com.company.sampleapp.test_support.AuthenticatedAsAdmin
 import io.jmix.core.DataManager
 import io.jmix.core.Id
@@ -29,6 +31,12 @@ class SoftDeleteTest {
 
     @Autowired
     lateinit var springLiquibase: SpringLiquibase
+
+    @Autowired
+    lateinit var repositoryA: EntitySoftDeleteARepository
+
+    @Autowired
+    lateinit var repositoryB: EntitySoftDeleteBRepository
 
     private fun resetLiquibase () {
         springLiquibase.isDropFirst = true
@@ -115,11 +123,61 @@ class SoftDeleteTest {
         Assertions.assertThat(dataManager.load(Id.of(c3)).optional().getOrNull()).isNull()
         Assertions.assertThat(dataManager.load(Id.of(c4)).optional().getOrNull()).isNull()
 
+        Assertions.assertThat(repositoryA.findAll().toList().size).isEqualTo(0)
+        Assertions.assertThat(repositoryA.findById(c1.id).getOrNull()).isNull()
+        Assertions.assertThat(repositoryA.findById(c2.id).getOrNull()).isNull()
+        Assertions.assertThat(repositoryA.findById(c3.id).getOrNull()).isNull()
+        Assertions.assertThat(repositoryA.findById(c4.id).getOrNull()).isNull()
+
         // But are in the database, only deactivated
         Assertions.assertThat(dataManager.load(Id.of(c1)).hint(PersistenceHints.SOFT_DELETION, false).one()).isNotNull
         Assertions.assertThat(dataManager.load(Id.of(c2)).hint(PersistenceHints.SOFT_DELETION, false).one()).isNotNull
         Assertions.assertThat(dataManager.load(Id.of(c3)).hint(PersistenceHints.SOFT_DELETION, false).one()).isNotNull
         Assertions.assertThat(dataManager.load(Id.of(c4)).hint(PersistenceHints.SOFT_DELETION, false).one()).isNotNull
+
+    }
+
+    @Test
+    fun test_A_repository() {
+        fun reloadParent() = dataManager.load(ParentEntity::class.java).id(UUID.fromString("00000000-0000-0000-0000-000000000000")).one()
+
+        resetLiquibase ()
+        createA()
+
+        var parent = reloadParent()
+        val c1 = dataManager.load(EntitySoftDeleteA::class.java).id(UUID.fromString("00000000-0000-0000-0000-000000000001")).one()
+        val c2 = dataManager.load(EntitySoftDeleteA::class.java).id(UUID.fromString("00000000-0000-0000-0000-000000000002")).one()
+        val c3 = dataManager.load(EntitySoftDeleteA::class.java).id(UUID.fromString("00000000-0000-0000-0000-000000000003")).one()
+        val c4 = dataManager.load(EntitySoftDeleteA::class.java).id(UUID.fromString("00000000-0000-0000-0000-000000000004")).one()
+
+        // check initial creation
+        Assertions.assertThat(parent.one2oneA).isEqualTo(c1)
+        Assertions.assertThat(parent.collectionA.size).isEqualTo(3)
+        Assertions.assertThat(parent.collectionA).contains(c2)
+        Assertions.assertThat(parent.collectionA).contains(c3)
+        Assertions.assertThat(parent.collectionA).contains(c4)
+
+        repositoryA.deleteAll()
+
+        // All entities look like removed
+        Assertions.assertThat(dataManager.load(EntitySoftDeleteA::class.java).all().list().size).isEqualTo(0)
+        Assertions.assertThat(dataManager.load(Id.of(c1)).optional().getOrNull()).isNull()
+        Assertions.assertThat(dataManager.load(Id.of(c2)).optional().getOrNull()).isNull()
+        Assertions.assertThat(dataManager.load(Id.of(c3)).optional().getOrNull()).isNull()
+        Assertions.assertThat(dataManager.load(Id.of(c4)).optional().getOrNull()).isNull()
+
+        Assertions.assertThat(repositoryA.findAll().toList().size).isEqualTo(0)
+        Assertions.assertThat(repositoryA.findById(c1.id).getOrNull()).isNull()
+        Assertions.assertThat(repositoryA.findById(c2.id).getOrNull()).isNull()
+        Assertions.assertThat(repositoryA.findById(c3.id).getOrNull()).isNull()
+        Assertions.assertThat(repositoryA.findById(c4.id).getOrNull()).isNull()
+
+        // But are in the database, only deactivated
+        Assertions.assertThat(dataManager.load(Id.of(c1)).hint(PersistenceHints.SOFT_DELETION, false).one()).isNotNull
+        Assertions.assertThat(dataManager.load(Id.of(c2)).hint(PersistenceHints.SOFT_DELETION, false).one()).isNotNull
+        Assertions.assertThat(dataManager.load(Id.of(c3)).hint(PersistenceHints.SOFT_DELETION, false).one()).isNotNull
+        Assertions.assertThat(dataManager.load(Id.of(c4)).hint(PersistenceHints.SOFT_DELETION, false).one()).isNotNull
+
     }
 
 
@@ -202,6 +260,54 @@ class SoftDeleteTest {
         Assertions.assertThat(dataManager.load(Id.of(c2)).optional().getOrNull()).isNull()
         Assertions.assertThat(dataManager.load(Id.of(c3)).optional().getOrNull()).isNull()
         Assertions.assertThat(dataManager.load(Id.of(c4)).optional().getOrNull()).isNull()
+
+        Assertions.assertThat(repositoryB.findAll().toList().size).isEqualTo(0)
+        Assertions.assertThat(repositoryB.findById(c1.id).getOrNull()).isNull()
+        Assertions.assertThat(repositoryB.findById(c2.id).getOrNull()).isNull()
+        Assertions.assertThat(repositoryB.findById(c3.id).getOrNull()).isNull()
+        Assertions.assertThat(repositoryB.findById(c4.id).getOrNull()).isNull()
+
+        // But are in the database, only deactivated
+        Assertions.assertThat(dataManager.load(Id.of(c1)).hint(PersistenceHints.SOFT_DELETION, false).one()).isNotNull
+        Assertions.assertThat(dataManager.load(Id.of(c2)).hint(PersistenceHints.SOFT_DELETION, false).one()).isNotNull
+        Assertions.assertThat(dataManager.load(Id.of(c3)).hint(PersistenceHints.SOFT_DELETION, false).one()).isNotNull
+        Assertions.assertThat(dataManager.load(Id.of(c4)).hint(PersistenceHints.SOFT_DELETION, false).one()).isNotNull
+    }
+
+    @Test
+    fun test_B_repository() {
+        fun reloadParent() = dataManager.load(ParentEntity::class.java).id(UUID.fromString("00000000-0000-0000-0000-000000000000")).one()
+
+        resetLiquibase ()
+        createB()
+
+        var parent = reloadParent()
+        val c1 = dataManager.load(EntitySoftDeleteB::class.java).id(UUID.fromString("00000000-0000-0000-0000-000000000001")).one()
+        val c2 = dataManager.load(EntitySoftDeleteB::class.java).id(UUID.fromString("00000000-0000-0000-0000-000000000002")).one()
+        val c3 = dataManager.load(EntitySoftDeleteB::class.java).id(UUID.fromString("00000000-0000-0000-0000-000000000003")).one()
+        val c4 = dataManager.load(EntitySoftDeleteB::class.java).id(UUID.fromString("00000000-0000-0000-0000-000000000004")).one()
+
+        // check initial creation
+        Assertions.assertThat(parent.one2oneB).isEqualTo(c1)
+        Assertions.assertThat(parent.collectionB.size).isEqualTo(3)
+        Assertions.assertThat(parent.collectionB).contains(c2)
+        Assertions.assertThat(parent.collectionB).contains(c3)
+        Assertions.assertThat(parent.collectionB).contains(c4)
+
+        repositoryA.deleteAll()
+
+        // All entities look like removed
+        Assertions.assertThat(dataManager.load(EntitySoftDeleteB::class.java).all().list().size).isEqualTo(0)
+        Assertions.assertThat(dataManager.load(Id.of(c1)).optional().getOrNull()).isNull()
+        Assertions.assertThat(dataManager.load(Id.of(c2)).optional().getOrNull()).isNull()
+        Assertions.assertThat(dataManager.load(Id.of(c3)).optional().getOrNull()).isNull()
+        Assertions.assertThat(dataManager.load(Id.of(c4)).optional().getOrNull()).isNull()
+
+        Assertions.assertThat(repositoryB.findAll().toList().size).isEqualTo(0)
+        Assertions.assertThat(repositoryB.findById(c1.id).getOrNull()).isNull()
+        Assertions.assertThat(repositoryB.findById(c2.id).getOrNull()).isNull()
+        Assertions.assertThat(repositoryB.findById(c3.id).getOrNull()).isNull()
+        Assertions.assertThat(repositoryB.findById(c4.id).getOrNull()).isNull()
 
         // But are in the database, only deactivated
         Assertions.assertThat(dataManager.load(Id.of(c1)).hint(PersistenceHints.SOFT_DELETION, false).one()).isNotNull
